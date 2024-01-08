@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Port Scanner</title>
+
+    <!-- Adicionando o link para o Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: linear-gradient(to right, #232526, #414345);
+            color: #ffffff;
+        }
+        #loadingIndicator {
+            display: none;
+            margin-top: 10px;
+        }
+        #resultsList {
+            padding: 0;
+        }
+        .card {
+            background-color: #343a40;
+            margin-bottom: 10px;
+        }
+        .card-header {
+            background-color: #343a40;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mt-4">Port Scanner</h1>
+        <div class="form-group">
+            <label for="hostInput">Host:</label>
+            <input type="text" class="form-control" id="hostInput" placeholder="Enter host IP">
+        </div>
+        <div class="form-group">
+            <label for="portsInput">Ports (comma-separated):</label>
+            <input type="text" class="form-control" id="portsInput" placeholder="Enter ports">
+        </div>
+        <button class="btn btn-primary" onclick="scanPorts()">
+            <span id="scanIcon">🔍</span> Scan Ports
+        </button>
+        <span id="loadingIndicator" class="ml-2">Scanning...</span>
+        <h2 class="mt-4">Results:</h2>
+        <div id="resultsList">
+            <div class="alert alert-warning" role="alert" id="noResultsMessage" style="display: none;">
+                No results available.
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    async function scanPorts() {
+    const hostInput = document.getElementById('hostInput');
+    const portsInput = document.getElementById('portsInput');
+    const loadingIndicator = document.getElementById('loadingIndicator');
+
+    if (!hostInput || !portsInput || !loadingIndicator) {
+        console.error('One or more elements not found.');
+        return;
+    }
+
+    const host = hostInput.value;
+    const ports = portsInput.value.split(',').map(port => parseInt(port.trim(), 10));
+
+    try {
+        // Inicializa o indicador de carregamento
+        setLoading(true);
+
+        const response = await fetch(`http://127.0.0.1:8000/scan/${host}/${ports}`);
+        const data = await response.json();
+
+        const resultsList = document.getElementById('resultsList');
+        resultsList.innerHTML = '';
+
+        if (data.results.length === 0) {
+            // Exibe a mensagem de nenhum resultado
+            showNoResultsMessage(true);
+        } else {
+            // Esconde a mensagem de nenhum resultado
+            showNoResultsMessage(false);
+
+            // Processa os resultados
+            data.results.forEach(result => {
+                const card = document.createElement('div');
+                card.className = 'card';
+
+                const cardHeader = document.createElement('div');
+                cardHeader.className = 'card-header';
+                cardHeader.textContent = `Port ${result.port}: ${result.status} (Code: ${result.code || 'N/A'})`;
+
+                card.appendChild(cardHeader);
+                resultsList.appendChild(card);
+            });
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        alert('An error occurred. Please check your input and try again.');
+    } finally {
+        // Finaliza o indicador de carregamento
+        setLoading(false);
+    }
+}
+
+function setLoading(isLoading) {
+    const loadingIndicator = document.getElementById('loadingIndicator');
+    const scanIcon = document.getElementById('scanIcon');
+
+    if (loadingIndicator && scanIcon) {
+        loadingIndicator.style.display = isLoading ? 'inline-block' : 'none';
+        scanIcon.innerHTML = isLoading ? '⌛' : '🔍';
+    }
+}
+
+function showNoResultsMessage(show) {
+    const noResultsMessage = document.getElementById('noResultsMessage');
+
+    if (noResultsMessage) {
+        noResultsMessage.style.display = show ? 'block' : 'none';
+    }
+}
+</script>
+    <!-- Adicionando o link para o Bootstrap JS e o jQuery -->
+    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+
+</html>
